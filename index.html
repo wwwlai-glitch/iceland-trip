@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>冰島倫敦小冊</title>
+<meta name="theme-color" content="#0D6486">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="冰島小冊">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="kicker">2026 冰島・倫敦</span>
+    <h1>冰島倫敦旅遊小冊</h1>
+    <p class="dates">2026/11/13（五）出發，返台組 11/22 回到台灣，留倫敦組 11/24 回到台灣</p>
+    <span class="status" id="status">2026/11/13 – 11/24</span>
+    <div class="syncbar"><button class="mebtn" id="mebtn" type="button">我是：還沒選</button><span class="syncpill wait" id="syncpill">讀取中</span><span id="synctime"></span></div>
+    <p class="calm">每天只要看「今天」那一頁：<b>幾點做什麼、吃什麼、住哪裡</b>，都在同一頁。遇到狀況，直接按「有問題時」。冰島和倫敦的時間都比台灣慢 8 小時。</p>
+    <div class="fsbar" id="fsbar" role="group" aria-label="文字大小"><span class="fslabel">文字大小</span></div>
+    <div class="editbar"><button class="btn" id="editbtn" type="button">跨天拖拉整理（一次看全部天數）</button></div>
+  </header>
+
+  <div class="tabbar"><nav class="tabs" role="tablist" aria-label="小冊分頁" id="tabs">
+    <button class="tab" role="tab" data-tab="trip" id="tab-trip" aria-selected="true">行程</button>
+    <button class="tab" role="tab" data-tab="packing" id="tab-packing" aria-selected="false">準備清單<span class="cnt" id="pk-cnt"></span></button>
+    <button class="tab" role="tab" data-tab="notes" id="tab-notes" aria-selected="false">提醒事項</button>
+    <button class="tab" role="tab" data-tab="help" id="tab-help" aria-selected="false">有問題時</button>
+    <button class="tab" role="tab" data-tab="todo" id="tab-todo" aria-selected="false">待確認<span class="cnt" id="td-cnt"></span></button>
+    <button class="tab" role="tab" data-tab="members" id="tab-members" aria-selected="false">成員</button>
+  </nav><button id="fs-cycle" type="button" aria-label="切換文字大小">字 標準</button></div>
+
+  <section class="panel" id="panel-trip" role="tabpanel" aria-labelledby="tab-trip">
+    <div class="chips" id="chips" role="tablist" aria-label="選擇日期"></div>
+    <div id="dayview"></div>
+  </section>
+  <section class="panel" id="panel-packing" role="tabpanel" aria-labelledby="tab-packing" hidden></section>
+  <section class="panel" id="panel-notes" role="tabpanel" aria-labelledby="tab-notes" hidden></section>
+  <section class="panel" id="panel-help" role="tabpanel" aria-labelledby="tab-help" hidden></section>
+  <section class="panel" id="panel-todo" role="tabpanel" aria-labelledby="tab-todo" hidden></section>
+  <section class="panel" id="panel-members" role="tabpanel" aria-labelledby="tab-members" hidden></section>
+  <p class="foot">改了會自動存到共用的試算表，大家重新打開或稍等一下就會看到。沒有網路時也能看、能改，等有訊號會自動上傳。</p>
+</div>
+<div class="pubbar" id="pubbar" hidden><div class="in"><div class="msg" id="pubmsg" role="status">跨天整理：拖曳後會自動存檔。</div><div class="bt"><button class="btn solid" id="pub-done" type="button">完成整理</button></div></div></div>
+<div class="floatsync" id="floatsync" role="status" hidden></div>
+<script src="config.js"></script>
+<script src="vendor/Sortable.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
