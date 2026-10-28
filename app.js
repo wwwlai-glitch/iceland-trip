@@ -601,7 +601,7 @@ function renderDay(d){
     tl.append(h("li",{class:"it swipe-row "+(i.k==="gap"?"gap":""),"data-id":i.id},actions,
       h("div",{class:"it swipe-front "+(i.k==="gap"?"gap":"")},tm,body,toggle,mapArea)));
   });
-  box.append(h("h3",{class:"sec-title",text:"今天的安排"}),h("details",{class:"edit-help"},h("summary",{text:"想調整行程？"}),h("p",{class:"hint",text:"想改行程：\n按住約 2 秒，就能拖曳換順序。\n那一列向左滑動，就能看到編輯跟刪除按鈕（按下去都有相對應功能）。\n改完會自動存檔，大家都看得到。"})),tl);
+  box.append(h("h3",{class:"sec-title",text:"今天的安排"}),h("details",{class:"edit-help"},h("summary",{text:"想調整行程？"}),h("p",{class:"hint",text:"想改行程：\n按住約半秒，就能拖曳換順序。\n那一列向左滑動，就能看到編輯跟刪除按鈕。\n改完會自動存檔，大家都看得到。"})),tl);
   if(d.rem&&d.rem.length){
     var rl=h("ul",{class:"rem"});
     d.rem.forEach(function(id){ var n=NOTES[id]; if(n) rl.append(h("li",{},h("b",{text:n[0]+"："}),n[1])); });
@@ -702,8 +702,8 @@ function dayDialog(d){
   });
 }
 
-/* ---------- 左滑操作、長按兩秒拖曳（單日畫面） ---------- */
-var HOLD_DRAG=2000;
+/* ---------- 左滑操作、長按半秒拖曳（單日畫面） ---------- */
+var HOLD_DRAG=500; /* 與 iOS（0.5 秒）、Android（0.4 秒）系統長按時間相近 */
 var LP={dragging:false,armed:false};
 var swipe={row:null,startX:0,startY:0,base:0,dx:0,axis:null,pointer:null,moved:false};
 function showTip(t){ var e=$("holdtip"); if(!e){ e=h("div",{id:"holdtip",role:"status"}); document.body.append(e); } e.textContent=t; }
@@ -755,7 +755,7 @@ function initHold(){
   dv.addEventListener("keydown",function(e){ if(e.key==="Escape"){ var row=e.target.closest(".swipe-open"); if(row){ setSwipe(row,false); row.querySelector(".swipe-toggle").focus(); } } });
   document.addEventListener("pointerdown",function(e){ if(!e.target.closest(".swipe-row")) closeSwipe(); });
   dv.addEventListener("contextmenu",function(e){ if(!edit.on&&e.target.closest(".tl > .it[data-id]")) e.preventDefault(); });
-  /* 長按滿兩秒、行程已被選起後，擋掉手機原生的捲動。
+  /* 長按滿半秒、行程已被選起後，擋掉手機原生的捲動。
      否則 iPhone 等手機會把手指移動當成捲頁面，中斷拖曳（pointercancel）。 */
   dv.addEventListener("touchmove",function(e){ if((LP.armed||LP.dragging)&&e.cancelable) e.preventDefault(); },{passive:false});
 }
@@ -771,7 +771,9 @@ function orderOps(ul,dayN){
 function initDaySortable(ul,d){
   if(!window.Sortable||!ul) return;
   window.Sortable.create(ul,{
-    animation:150,ghostClass:"ghost",delay:HOLD_DRAG,delayOnTouchOnly:false,touchStartThreshold:10,
+    /* forceFallback：不用瀏覽器原生拖曳，手指容許晃動的距離才不會因為 iPhone 高解析螢幕被縮成 3px。
+       touchStartThreshold：按住的這段時間內，手指晃動 12px 以內都還算按住。 */
+    animation:150,ghostClass:"ghost",delay:HOLD_DRAG,delayOnTouchOnly:false,touchStartThreshold:12,forceFallback:true,fallbackTolerance:3,
     scroll:true,scrollSensitivity:90,scrollSpeed:14,
     filter:"a,button,input,select,textarea,.swipe-actions,.map-preview",preventOnFilter:false,
     onChoose:function(){ LP.armed=true; closeSwipe(); showTip("可以拖曳了，移動手指換位置"); },
