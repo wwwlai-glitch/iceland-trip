@@ -425,6 +425,31 @@ function whoDialog(first){
   if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
 }
 
+/* ---------- 顯示模式：裝置偏好，獨立於共用行程資料 ---------- */
+var themeChoice="system", themeMedia=window.matchMedia("(prefers-color-scheme: dark)");
+function renderTheme(){
+  var dark=themeChoice==="dark"||(themeChoice==="system"&&themeMedia.matches);
+  document.querySelectorAll("[data-theme-choice]").forEach(function(button){
+    button.setAttribute("aria-pressed",String(button.dataset.themeChoice===themeChoice));
+  });
+  $("theme-hint").textContent=(themeChoice==="system"?"跟隨系統，目前為":"已選擇")+(dark?"深色":"淺色")+"模式，僅套用在這台裝置。";
+  document.querySelector('meta[name="theme-color"]').setAttribute("content",dark?"#101E22":"#F3F3EE");
+}
+function setTheme(choice){
+  themeChoice=choice==="light"||choice==="dark"?choice:"system";
+  if(themeChoice==="system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",themeChoice);
+  lsSet("trip-theme",themeChoice); renderTheme();
+}
+function initTheme(){
+  document.querySelectorAll("[data-theme-choice]").forEach(function(button){
+    button.addEventListener("click",function(){ setTheme(button.dataset.themeChoice); });
+  });
+  setTheme(lsGet("trip-theme"));
+  if(themeMedia.addEventListener) themeMedia.addEventListener("change",renderTheme);
+  else if(themeMedia.addListener) themeMedia.addListener(renderTheme);
+}
+
 /* ---------- 文字大小 ---------- */
 var FS=[18,21,24,28], FSN=["標準","大","特大","超大"], fsIdx=0;
 function setFs(i){
@@ -989,15 +1014,19 @@ function initSW(){
 
 /* ---------- 啟動 ---------- */
 function start(){
-  initFs(); renderStatus();
+  initTheme(); initFs(); renderStatus();
   window.addEventListener("online",refreshMiniMaps);
   window.addEventListener("offline",refreshMiniMaps);
   if(window.ResizeObserver){
-    new ResizeObserver(function(){
+    var navigationObserver=new ResizeObserver(function(){
       var height=$("date-dock").getBoundingClientRect().height;
       if(height) document.documentElement.style.setProperty("--date-dock-height",height+"px");
+      var tabsHeight=document.querySelector(".tabbar").getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--tabbar-height",tabsHeight+"px");
       revealDate();
-    }).observe($("date-dock"));
+    });
+    navigationObserver.observe($("date-dock"));
+    navigationObserver.observe(document.querySelector(".tabbar"));
   }
   window.addEventListener("resize",revealDate);
   $("go-today").addEventListener("click",function(){ selectDay(dayIndexToday()); });

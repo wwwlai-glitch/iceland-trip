@@ -557,3 +557,25 @@ body{margin:0;background-image:radial-gradient(ellipse at 100% 0%,var(--accent-b
   :root:has(#panel-trip:not([hidden])):not(.editing) .newver{bottom:calc(var(--date-dock-height,125px) + 12px)}
   .editing .newver{bottom:calc(11rem + env(safe-area-inset-bottom,0px))}
 }
+
+/* 顯示模式選擇：可跟隨系統，或固定使用此裝置的淺／深色偏好。 */
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"] .day-motif,:root[data-theme="dark"] .meal-symbol{filter:brightness(.8) saturate(.85)}
+.themebar{display:flex;flex-direction:column;gap:.45rem;padding-block:.85rem;margin-top:.6rem;border-block:1px solid var(--line)}
+.theme-label{font-size:.85rem;font-weight:700}
+.theme-options{display:flex;flex-wrap:wrap;gap:.4rem}
+.theme-options button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:46px;padding:.4rem .7rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer}
+.theme-options button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.theme-options .ui-icon{width:18px;height:18px}
+.theme-hint{font-size:.68rem;color:var(--muted);line-height:1.7}
+@media(max-width:600px){.theme-options button{flex:1 0 auto}.theme-label{font-size:.8rem}}
+
+/* 桌面日期列跟在分頁列下方；高度隨字級與版面調整。 */
+@media(min-width:601px){
+  .date-dock{
+    position:sticky;top:calc(var(--tabbar-height,72px) + env(safe-area-inset-top,0px));z-index:4;
+    background:var(--bg);padding:.5rem 16px .6rem;margin-inline:-16px;
+    border-bottom:1px solid var(--line);box-shadow:0 6px 14px #102b3208;
+  }
+  #dayview,.edday{scroll-margin-top:calc(var(--tabbar-height,72px) + var(--date-dock-height,110px) + env(safe-area-inset-top,0px) + 1rem)}
+}

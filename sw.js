@@ -1,5 +1,5 @@
 /* 離線快取：有網路時抓最新版（最多等 3 秒），沒網路就用手機裡存的。 */
-var VERSION="v11";
+var VERSION="v13";
 var CACHE="trip-"+VERSION;
 var SHELL=["assets/daily-scenes.webp","assets/travel-cover.webp","assets/icons.svg","./","index.html","style.css","app.js","config.js","vendor/Sortable.min.js","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png"];
 self.addEventListener("install",function(e){
