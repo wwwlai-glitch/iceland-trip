@@ -26,10 +26,166 @@ function h(tag, props){
   }
   return e;
 }
+function icon(name){
+  var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","ui-icon"); svg.setAttribute("aria-hidden","true");
+  var use=document.createElementNS("http://www.w3.org/2000/svg","use");
+  use.setAttribute("href","assets/icons.svg#"+name); svg.append(use); return svg;
+}
+/* 十二天各自的插畫位於 3 × 4 圖集；SVG 視窗取景，不重複使用封面。 */
+function dailyArtwork(d){
+  var index=(Math.max(1,Math.round(d.n))-1)%12;
+  var ns="http://www.w3.org/2000/svg", svg=document.createElementNS(ns,"svg");
+  svg.setAttribute("class","day-art");
+  svg.setAttribute("viewBox",((index%3)*200)+" "+(Math.floor(index/3)*100)+" 200 100");
+  svg.setAttribute("preserveAspectRatio","xMidYMid slice");
+  svg.setAttribute("aria-hidden","true");
+  var art=document.createElementNS(ns,"image");
+  art.setAttribute("href","assets/daily-scenes.webp");
+  art.setAttribute("width","600"); art.setAttribute("height","400");
+  art.setAttribute("preserveAspectRatio","none"); svg.append(art);
+  return svg;
+}
+function dayMood(d){
+  var title=d.title||"";
+  if(/航班|飛機|機場|返台|回家|起飛|抵台/.test(title)) return "plane";
+  if(/倫敦|London|貝克|市區|博物館/i.test(title)) return "city";
+  if(/溫泉|海|湖|冰河/.test(title)) return "water";
+  if(/冰島|瀑布|山|黃金圈|維克|冰川|雪/.test(title)) return "mountain";
+  return "compass";
+}
 function $(id){ return document.getElementById(id); }
 function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
-function linkBtn(l){ return h("a",{class:"btn",href:l[1],target:"_blank",rel:"noopener noreferrer",text:l[0]}); }
+/* 短網址不能直接嵌入；使用已核對店家的 Google 官方嵌入網址。 */
+var miniMapViews={};
+var MAP_PREVIEWS={
+
+  "https://maps.app.goo.gl/XZNSoVnGvN7tvJcQ6": {
+    "name": "凱夫拉維克國際機場",
+    "address": "235 Keflavík, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-22.6281862!3d63.9814869!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4929fdfce2ab799f%3A0x27f88d0a15c328cd!2z5Yex5aSr5ouJ57at5YWL5ZyL6Zqb5qmf5aC0!5e0!3m2!1szh-TW!2stw!4v1793179331798!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/vDnsLMWSbebzNnKU7": {
+    "name": "Mountaineers of Iceland · 雪上摩托車集合點",
+    "address": "Gullfoss, 846 Bláskógabyggð, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2200!2d-20.1303119!3d64.3257178!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d61d76fbd5f185%3A0xf1c3e3ea4d8b084c!2sMountaineers%20of%20Iceland%20-%20Meeting%20Point!5e0!3m2!1szh-TW!2stw!4v1793179338776!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/5vyDDySXPYtDt3Dc9": {
+    "name": "Brúarfoss Parking · 藍色秘境瀑布停車場",
+    "address": "Hlauptunga, 801 Selfoss, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2200!2d-20.5211868!3d64.2621888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d699fdce0c55f9%3A0x64499564f10c12ec!2sBr%C3%BAarfoss%20Parking!5e0!3m2!1szh-TW!2stw!4v1793179345963!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/JrbaHSeRCZCfYU4X8": {
+    "name": "Skógafoss · 史可加瀑布",
+    "address": "Gönguleið um Fimmvörðuháls, 861, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-19.5112825!3d63.5320209!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d73b763edc5d8d%3A0x5b76f8680af00b7b!2z5Y-y5Y-v5Yqg54CR5biD!5e0!3m2!1szh-TW!2stw!4v1793179352543!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/DQz6pk4naQUGDfjTA": {
+    "name": "Hestar og Fjöll · 騎馬集合點",
+    "address": "Mið-Grund, 861 Hvolsvöllur, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-19.8043607!3d63.5525588!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d719c16b94fc19%3A0x97b9b60eaf2f57dd!2sHestar%20og%20Fj%C3%B6ll%20Ehf!5e0!3m2!1szh-TW!2stw!4v1793179374553!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/xTYh3XEoPxfas6Cm8": {
+    "name": "Black Crust Pizzeria",
+    "address": "Vík, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-19.0027754!3d63.4176382!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d74b361a8aa385%3A0xbae403cd3a0a1ac6!2sBlack%20Crust%20Pizzeria!5e0!3m2!1szh-TW!2stw!4v1793179404726!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/tm7wDBa3xY9MUWLd8": {
+    "name": "Fjaðrárgljúfur · 羽毛河峽谷",
+    "address": "881, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-18.1718158!3d63.771279!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d0e5f0594291dd%3A0xa420ecc17165b5bd!2zRmphw7Byw6FyZ2xqw7pmdXIg57695q-b5rKz5bO96LC3!5e0!3m2!1szh-TW!2stw!4v1793179412652!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/4YR7smmumf3B7huv9": {
+    "name": "Fjallsárlón · 冰河船集合點",
+    "address": "Fjallsárlón Iceland, 785 Öræfi, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2200!2d-16.3657237!3d64.0157738!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d02859587b07a9%3A0x88888cbc14a0da2c!2sFjalls%C3%A1rl%C3%B3n%20Iceberg%20Boat%20Tours%20%26%20Ice%20Floating!5e0!3m2!1szh-TW!2stw!4v1793179419282!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/Ahxzm6WNczPdzW7AA": {
+    "name": "Tröll Expeditions Skaftafell · 冰川健行集合點",
+    "address": "West of Hofgardur, 785 Hof, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2200!2d-16.7280734!3d63.9105624!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d73a162c60c5d9%3A0x10d16fe4295fb561!2sTr%C3%B6ll%20Expeditions%20Skaftafell!5e0!3m2!1szh-TW!2stw!4v1793179425553!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/ukuLYTthUahXEnXj8": {
+    "name": "Systrakaffi 餐廳",
+    "address": "Klausturvegur 13, 880 Kirkjubæjarklaustur, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2200!2d-18.0474509!3d63.7904318!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d0e54554253d8d%3A0x70b314f94e874fd8!2sSystrakaffi!5e0!3m2!1szh-TW!2stw!4v1793179432502!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/Eh5arDKBaHyVQzHj9": {
+    "name": "Sky Lagoon",
+    "address": "Vesturvör 44–48, 200 Kópavogur, 冰島",
+    "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2200!2d-21.9462908!3d64.1164891!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d60b86ce2825a7%3A0x2abad76345ba6910!2sSky%20Lagoon!5e0!3m2!1szh-TW!2stw!4v1793179439581!5m2!1szh-TW!2stw"
+  }
+,
+  "https://maps.app.goo.gl/N2bqdDQBKZGUs4E1A":{
+    name:"雷克雅維克住宿 · Hverfisgata 55",address:"Hverfisgata 55, 101 Reykjavík, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1739.8877446764527!2d-21.9255408!3d64.1458401!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d674cdba9fc07f%3A0x58423429338c17a2!2zSHZlcmZpc2dhdGEgNTUsIDEwMSBSZXlramF2w61rLCDlhrDls7Y!5e0!3m2!1szh-TW!2stw!4v1793178852076!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/EUAX4XtaGMqoTmp36":{
+    name:"Borg 住宿 · Hraunbraut 2B",address:"Hraunbraut 2B, 805 Borg, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1744.3029308813755!2d-20.7631042!3d64.07536259999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d68c305d6e7e25%3A0xe586bf96179b4839!2zSHJhdW5icmF1dCAyQiwgODA1IEJvcmcsIOWGsOWztg!5e0!3m2!1szh-TW!2stw!4v1793178881846!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/8svX5QkGUvo2LwG58":{
+    name:"The Holiday Houses by Stay in Iceland",address:"881 Kirkjubæjarklaustur, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1769.4542939703388!2d-18.4204332!3d63.6730737!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d0c3036d36cc07%3A0x55fd373279f5482a!2sThe%20holiday%20houses%20by%20Stay%20in%20Iceland!5e0!3m2!1szh-TW!2stw!4v1793178889390!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/1zfpNKV7KGqU8gYv6":{
+    name:"Adventure Hotel Hof",address:"Hof 1, 785, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1754.8398110227615!2d-16.705621999999998!3d63.90699669999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d03a45334b7109%3A0x1a9713dbab0d8d58!2sAdventure%20Hotel%20Hof!5e0!3m2!1szh-TW!2stw!4v1793178898802!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/V3X6iS3dAVDGAB5k6":{
+    name:"Hörgsland Guesthouse",address:"Hörgsland 1, 880 Kirkjubæjarklaustur, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1758.8560494332964!2d-17.955437!3d63.8427586!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d0fbac5a595cc3%3A0xc2e2ece1f647017b!2sH%C3%B6rgsland%20Guesthouse!5e0!3m2!1szh-TW!2stw!4v1793178907210!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/WTo5qLWko5T4xyNV8":{
+    name:"雷克雅維克住宿 · Rauðarárstígur 31",address:"Rauðarárstígur 31, 105 Reykjavík, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1740.1846538513853!2d-21.9145705!3d64.141102!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d674c97a7b3751%3A0xc1b0bd5194fa8154!2zUmF1w7BhcsOhcnN0w61ndXIgMzEsIDEwNSBSZXlramF2w61rLCDlhrDls7Y!5e0!3m2!1szh-TW!2stw!4v1793178917164!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/j4c8MKK2PuktB8xq9":{
+    name:"Aurora Hotel at Keflavík International Airport",address:"Blikavöllur 2, 235 Keflavík, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1749.1458190715882!2d-22.6279207!3d63.998009399999994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d3c993d2f4f0fd%3A0xd2d9c586bace1c85!2sAurora%20Hotel%20at%20Keflav%C3%ADk%20International%20Airport!5e0!3m2!1szh-TW!2stw!4v1793178924515!5m2!1szh-TW!2stw"
+  },
+  "https://maps.app.goo.gl/PCuhiW99uFFHDD1Q7":{
+    name:"Bónus 小豬超市",address:"Laugavegur 59 Kjörgarður, 101 Reykjavík, 冰島",
+    embed:"https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3480.183473354279!2d-21.9299971!3d64.1425848!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48d674cc38464e81%3A0x612ae215b3cf8eea!2zQsOzbnVz!5e0!3m2!1szh-TW!2stw!4v1793178363580!5m2!1szh-TW!2stw"
+  }
+};
+function mapPreview(l){
+  try{
+    var url=new URL(l[1]);
+    if(url.protocol!=="https:") return null;
+    if(MAP_PREVIEWS[url.origin+url.pathname]) return MAP_PREVIEWS[url.origin+url.pathname];
+    if(url.hostname==="www.google.com"&&url.pathname==="/maps/embed"&&url.searchParams.has("pb")) return {name:l[0],address:"",embed:url.href};
+  }catch(e){}
+  return null;
+}
+function loadMiniMap(details){
+  var canvas=details.querySelector(".map-canvas");
+  if(!details.open) return;
+  if(navigator.onLine===false){
+    canvas.textContent="";
+    canvas.append(h("p",{class:"map-placeholder",role:"status",text:"目前沒有網路，連線後會在這裡顯示小地圖。地點地址仍可查看。"}));
+    return;
+  }
+  if(canvas.querySelector("iframe")) return;
+  canvas.textContent="";
+  canvas.append(h("iframe",{src:details.dataset.embed,title:details.dataset.name+"小地圖",loading:"lazy",referrerpolicy:"strict-origin-when-cross-origin",allowfullscreen:true}));
+}
+function refreshMiniMaps(){ document.querySelectorAll(".map-preview[open]").forEach(loadMiniMap); }
+function linkBtn(l){
+  var place=mapPreview(l);
+  if(!place) return h("a",{class:"btn",href:l[1],target:"_blank",rel:"noopener noreferrer",text:l[0]});
+  var details=h("details",{class:"map-preview","data-embed":place.embed,"data-name":place.name,open:!!miniMapViews[l[1]]},
+    h("summary",{},icon("pin"),h("span",{text:l[0]}),h("span",{class:"map-toggle-label","aria-hidden":"true",text:"小地圖"})),
+    h("div",{class:"map-content"},
+      h("div",{class:"map-place"},h("b",{text:place.name}),place.address?h("p",{text:place.address}):null),
+      h("div",{class:"map-canvas"}),
+      h("div",{class:"map-footer"},h("a",{class:"btn",href:l[1],target:"_blank",rel:"noopener noreferrer",text:"在 Google Maps 開啟 ↗"}),
+        h("p",{text:"小地圖需要網路；若無法顯示，可開啟 Google Maps。"}))));
+  details.addEventListener("toggle",function(){ miniMapViews[l[1]]=details.open; loadMiniMap(details); });
+  if(details.open) loadMiniMap(details);
+  return details;
+}
 function J(v,d){ if(v&&typeof v==="object") return v; if(!v) return d; try{ var x=JSON.parse(v); return x==null?d:x; }catch(e){ return d; } }
 function newId(p){ return (p||"n")+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function num(v){ var n=parseFloat(v); return isNaN(n)?0:n; }
@@ -278,6 +434,7 @@ function setFs(i){
   [].forEach.call(document.querySelectorAll("#fsbar button"),function(b){ b.setAttribute("aria-pressed",String(+b.getAttribute("data-fs")===fsIdx)); });
   var c=$("fs-cycle"); if(c) c.textContent="字 "+FSN[fsIdx];
   lsSet("ice-fs",fsIdx);
+  requestAnimationFrame(revealDate);
 }
 function initFs(){
   var bar=$("fsbar");
@@ -301,8 +458,9 @@ function renderStatus(){
 var TABS=["trip","packing","notes","help","todo","members"];
 function showTab(name){
   state.tab=name;
-  TABS.forEach(function(n){ $("panel-"+n).hidden=(n!==name); $("tab-"+n).setAttribute("aria-selected",String(n===name)); });
+  TABS.forEach(function(n){ $("panel-"+n).hidden=(n!==name); $("tab-"+n).setAttribute("aria-selected",String(n===name)); $("tab-"+n).tabIndex=n===name?0:-1; });
   renderTab();
+  $("tab-"+name).scrollIntoView({block:"nearest",inline:"nearest"});
 }
 function renderTab(){
   if(state.tab==="trip"){ if(edit.on) renderEdit(); else renderTrip(); }
@@ -311,6 +469,10 @@ function renderTab(){
   if(state.tab==="help") renderHelp();
   if(state.tab==="todo") renderTodo();
   if(state.tab==="members") renderMembers();
+  if(state.tab!=="trip"){
+    var heading=$("panel-"+state.tab).querySelector("h2");
+    if(heading){ heading.classList.add("illustrated-heading"); heading.prepend(icon({packing:"bag",notes:"note",help:"help",todo:"check",members:"people"}[state.tab])); }
+  }
 }
 function renderAll(){
   if(store.holdRender||openDialog()){ store.pendingRender=true; return; }
@@ -323,14 +485,32 @@ function openDialog(){ return !!document.querySelector("dialog[open]"); }
 function flushRender(){ if(store.pendingRender) renderAll(); }
 
 /* ---------- 行程 ---------- */
+function selectDay(n){
+  state.day=n;
+  renderTrip();
+  var view=$("dayview");
+  view.scrollIntoView({block:"start"});
+  view.focus({preventScroll:true});
+}
+function revealDate(){
+  var box=$("chips"), active=box.querySelector('[aria-selected="true"]');
+  if(active) box.scrollLeft=active.offsetLeft-box.offsetLeft-(box.clientWidth-active.offsetWidth)/2;
+}
 function renderChips(){
   var box=$("chips"); box.textContent="";
   var td=dayIndexToday();
-  box.append(h("button",{class:"chip",type:"button",role:"tab","aria-selected":String(state.day===0),onclick:function(){ state.day=0; renderTrip(); }},h("small",{text:"全部"}),h("b",{text:"總覽"})));
+  box.append(h("button",{class:"chip",type:"button",role:"tab","aria-selected":String(state.day===0),onclick:function(){ selectDay(0); }},h("small",{text:"全部"}),h("b",{text:"總覽"})));
   DAYS.forEach(function(d){
-    box.append(h("button",{class:"chip"+(td===d.n?" today":""),type:"button",role:"tab","aria-selected":String(state.day===d.n),onclick:function(){ state.day=d.n; renderTrip(); window.scrollTo(0,0); }},
+    box.append(h("button",{class:"chip"+(td===d.n?" today":""),type:"button",role:"tab","aria-selected":String(state.day===d.n),onclick:function(){ selectDay(d.n); }},
       h("small",{text:"第 "+d.n+" 天"+(td===d.n?"（今天）":"")}),h("b",{text:d.date+"（"+d.dow+"）"})));
   });
+  [].forEach.call(box.children,function(b){
+    b.tabIndex=b.getAttribute("aria-selected")==="true"?0:-1;
+    b.setAttribute("aria-controls","dayview");
+  });
+  $("date-caption").textContent=state.day?"第 "+state.day+" 天 / "+DAYS.length+" 天旅程":"翻開旅程 · 全部日期";
+  $("go-today").hidden=!td||!dayByN(td);
+  requestAnimationFrame(revealDate);
 }
 function flagCount(d){ var n=0; d.items.forEach(function(i){ if(i.k==="gap") n++; }); d.meals.forEach(function(m){ if(m[2]&&/需要|未填|待補|可能趕不上/.test(m[2])) n++; }); return n; }
 function renderTrip(){
@@ -348,24 +528,32 @@ function renderOverview(){
   var g=h("div",{class:"ov"});
   DAYS.forEach(function(d){
     var f=flagCount(d);
-    g.append(h("button",{class:"ov-row",type:"button",onclick:function(){ state.day=d.n; renderTrip(); window.scrollTo(0,0); }},
-      h("div",{class:"no"},String(d.n),h("small",{text:d.date+"（"+d.dow+"）"})),
-      h("div",{},h("div",{class:"t",text:d.title}),h("div",{class:"m",text:"住："+d.lodging}),f?h("div",{class:"m"},h("span",{class:"flag",text:f+" 項待確認"})):null)));
+    g.append(h("button",{class:"ov-row",type:"button",onclick:function(){ selectDay(d.n); }},
+      h("div",{class:"day-motif motif-"+dayMood(d)},icon(dayMood(d)),h("span",{class:"motif-day",text:"DAY "+String(d.n).padStart(2,"0")})),
+      h("div",{class:"ov-copy"},h("div",{class:"ov-date",text:d.date+"（"+d.dow+"）"}),h("div",{class:"t",text:d.title}),h("div",{class:"m"},icon("bed"),d.lodging),f?h("div",{class:"m"},h("span",{class:"flag",text:f+" 項待確認"})):null)));
   });
   box.append(g);
   return box;
 }
 function renderDay(d){
   var box=h("div",{class:"stack"});
-  var head=h("div",{class:"dayhead"},
+  var copy=h("div",{class:"dayhead-copy"},
     h("div",{class:"when",text:"第 "+d.n+" 天・"+d.date+"（"+d.dow+"）"}),
     h("h2",{text:d.title}),
-    h("div",{class:"row"},h("span",{class:"pill lodge",text:"今晚住："+d.lodging}),d.sun?h("span",{class:"pill sun",text:"日出約 10:00，天黑約 16:00"}):null));
-  if(d.ll&&d.ll.length) head.append(h("div",{class:"btns"},d.ll.map(linkBtn)));
+    h("div",{class:"row"},h("span",{class:"pill lodge"},icon("bed"),"今晚住："+d.lodging),d.sun?h("span",{class:"pill sun"},icon("sun"),"日出約 10:00，天黑約 16:00"):null));
+  var head=h("div",{class:"dayhead"},
+    h("div",{class:"day-visual mood-"+dayMood(d),"aria-hidden":"true"},
+      dailyArtwork(d),
+      h("span",{class:"day-visual-stamp"},icon(dayMood(d)),"DAY "+String(d.n).padStart(2,"0"))),copy);
+  if(d.ll&&d.ll.length){
+    var lodgingMaps=d.ll.filter(mapPreview), lodgingLinks=d.ll.filter(function(l){ return !mapPreview(l); });
+    if(lodgingLinks.length) copy.append(h("div",{class:"btns"},lodgingLinks.map(linkBtn)));
+    if(lodgingMaps.length) head.append(h("div",{class:"dayhead-maps"},lodgingMaps.map(linkBtn)));
+  }
   box.append(head);
   if(d.grp) box.append(h("div",{class:"card"},h("p",{class:"sub",text:d.grp})));
   var meals=h("div",{class:"meals"});
-  d.meals.forEach(function(m){ meals.append(h("div",{class:"meal"},h("div",{class:"k",text:m[0]}),h("div",{class:"v",text:m[1]}),m[2]?h("div",{class:"n",text:m[2]}):null)); });
+  d.meals.forEach(function(m,k){ meals.append(h("div",{class:"meal meal-"+k},h("div",{class:"meal-symbol"},icon(["coffee","utensils","moon"][k]||"utensils")),h("div",{class:"k",text:m[0]}),h("div",{class:"v",text:m[1]}),m[2]?h("div",{class:"n",text:m[2]}):null)); });
   box.append(meals);
   var tl=h("ul",{class:"tl","data-day":String(d.n)});
   d.items.forEach(function(i){
@@ -373,10 +561,22 @@ function renderDay(d){
     var body=h("div",{},h("div",{class:"tx"},i.g?h("span",{class:"tag grp",text:GRP[i.g]||i.g}):null,i.x));
     if(i.k==="gap"&&i.t&&i.t!=="待確認") body.append(h("div",{class:"nt",text:"時間："+i.t}));
     if(i.note) body.append(h("div",{class:"nt",text:i.note}));
-    if(i.links&&i.links.length) body.append(h("div",{class:"btns"},i.links.map(linkBtn)));
-    tl.append(h("li",{class:"it "+(i.k==="gap"?"gap":""),"data-id":i.id},tm,body));
+    var mapArea=null;
+    if(i.links&&i.links.length){
+      var mapLinks=i.links.filter(mapPreview), otherLinks=i.links.filter(function(l){ return !mapPreview(l); });
+      if(otherLinks.length) body.append(h("div",{class:"btns"},otherLinks.map(linkBtn)));
+      if(mapLinks.length) mapArea=h("div",{class:"row-maps"},mapLinks.map(linkBtn));
+    }
+    var actions=h("div",{class:"swipe-actions",id:"actions-"+i.id,inert:true},
+      h("button",{type:"button",class:"swipe-edit",text:"編輯",onclick:function(){ closeSwipe(); itemDialog(d,i); }}),
+      armBtn(h("button",{type:"button",class:"swipe-delete",text:"刪除"}),"刪除","確認刪除",function(){ closeSwipe(); commit([{t:"items",op:"del",row:{id:i.id}}]); }));
+    var toggle=h("button",{type:"button",class:"swipe-toggle",text:"⋯","aria-label":"顯示「"+i.x+"」的編輯與刪除操作","aria-expanded":"false","aria-controls":"actions-"+i.id,onclick:function(e){
+      var row=e.currentTarget.closest(".swipe-row"); setSwipe(row,!row.classList.contains("swipe-open"));
+    }});
+    tl.append(h("li",{class:"it swipe-row "+(i.k==="gap"?"gap":""),"data-id":i.id},actions,
+      h("div",{class:"it swipe-front "+(i.k==="gap"?"gap":"")},tm,body,toggle,mapArea)));
   });
-  box.append(h("h3",{class:"sec-title",text:"今天的安排"}),h("p",{class:"hint",text:"想改行程：按住那一列約 1 秒再放開，就能編輯或刪除。一直按住約 2 秒，就能拖曳換順序。改完會自動存檔，大家都看得到。"}),tl);
+  box.append(h("h3",{class:"sec-title",text:"今天的安排"}),h("details",{class:"edit-help"},h("summary",{text:"想調整行程？"}),h("p",{class:"hint",text:"想改行程：\n按住約 2 秒，就能拖曳換順序。\n那一列向左滑動，就能看到編輯跟刪除按鈕（按下去都有相對應功能）。\n改完會自動存檔，大家都看得到。"})),tl);
   if(d.rem&&d.rem.length){
     var rl=h("ul",{class:"rem"});
     d.rem.forEach(function(id){ var n=NOTES[id]; if(n) rl.append(h("li",{},h("b",{text:n[0]+"："}),n[1])); });
@@ -385,8 +585,8 @@ function renderDay(d){
   if(d.items.some(function(i){ return i.k==="gap"; })) box.append(h("div",{class:"legend"},h("span",{},h("span",{class:"tag gap",text:"待確認"}),"前後對不起來或還沒填")));
   var nav=h("div",{class:"btns"});
   var idx=DAYS.indexOf(d);
-  if(idx>0) nav.append(h("button",{class:"btn",type:"button",text:"前一天",onclick:function(){ state.day=DAYS[idx-1].n; renderTrip(); window.scrollTo(0,0); }}));
-  if(idx<DAYS.length-1) nav.append(h("button",{class:"btn solid",type:"button",text:"下一天",onclick:function(){ state.day=DAYS[idx+1].n; renderTrip(); window.scrollTo(0,0); }}));
+  if(idx>0) nav.append(h("button",{class:"btn",type:"button",text:"前一天",onclick:function(){ selectDay(DAYS[idx-1].n); }}));
+  if(idx<DAYS.length-1) nav.append(h("button",{class:"btn solid",type:"button",text:"下一天",onclick:function(){ selectDay(DAYS[idx+1].n); }}));
   box.append(nav);
   box.append(h("div",{class:"btns"},
     h("button",{class:"btn",type:"button",text:"新增一項行程",onclick:function(){ itemDialog(d,null); }}),
@@ -477,50 +677,58 @@ function dayDialog(d){
   });
 }
 
-/* ---------- 長按編輯、長按更久拖曳（單日畫面） ---------- */
-var HOLD_EDIT=700, HOLD_DRAG=1800;
-var LP={t1:null,t2:null,li:null,x:0,y:0,ready:false,dragging:false,kind:null};
+/* ---------- 左滑操作、長按兩秒拖曳（單日畫面） ---------- */
+var HOLD_DRAG=2000;
+var LP={dragging:false};
+var swipe={row:null,startX:0,startY:0,base:0,dx:0,axis:null,pointer:null,moved:false};
 function showTip(t){ var e=$("holdtip"); if(!e){ e=h("div",{id:"holdtip",role:"status"}); document.body.append(e); } e.textContent=t; }
 function hideTip(){ var e=$("holdtip"); if(e) e.remove(); }
-function lpClear(){
-  clearTimeout(LP.t1); clearTimeout(LP.t2);
-  if(LP.li) LP.li.classList.remove("hold");
-  hideTip(); LP.li=null; LP.ready=false; LP.kind=null;
+function setSwipe(row,open){
+  document.querySelectorAll(".swipe-row.swipe-open").forEach(function(other){ if(other!==row) setSwipe(other,false); });
+  row.classList.toggle("swipe-open",open);
+  row.style.removeProperty("--swipe-offset");
+  row.querySelector(".swipe-actions").inert=!open;
+  row.querySelector(".swipe-toggle").setAttribute("aria-expanded",String(open));
 }
+function closeSwipe(){ document.querySelectorAll(".swipe-row.swipe-open").forEach(function(row){ setSwipe(row,false); }); }
 function initHold(){
   var dv=$("dayview");
   dv.addEventListener("pointerdown",function(e){
-    if(edit.on||LP.dragging) return;
-    if(e.pointerType==="mouse"&&e.button!==0) return;
-    if(e.target.closest("a,button,input,select,textarea")) return;
-    var li=e.target.closest(".tl > .it[data-id]"), kind=null, el=null;
-    if(li){ kind="item"; el=li; } else { el=e.target.closest(".dayhead,.meals"); if(el) kind="day"; }
-    if(!el) return;
-    lpClear();
-    LP.li=el; LP.kind=kind; LP.x=e.clientX; LP.y=e.clientY;
-    LP.t1=setTimeout(function(){
-      LP.ready=true; el.classList.add("hold");
-      showTip(kind==="item"?"現在放開＝編輯　繼續按住＝拖曳":"現在放開＝編輯這天");
-      try{ if(navigator.vibrate) navigator.vibrate(20); }catch(x){}
-    },HOLD_EDIT);
-    if(kind==="item") LP.t2=setTimeout(function(){
-      LP.ready=false; el.classList.remove("hold"); showTip("可以拖曳了，移動手指換位置");
-      try{ if(navigator.vibrate) navigator.vibrate(40); }catch(x){}
-    },HOLD_DRAG);
+    if(edit.on||LP.dragging||e.isPrimary===false||(e.pointerType==="mouse"&&e.button!==0)) return;
+    var row=e.target.closest(".swipe-row");
+    if(!row){ closeSwipe(); return; }
+    if(e.target.closest("a,button,input,select,textarea,.map-preview")) return;
+    document.querySelectorAll(".swipe-open").forEach(function(other){ if(other!==row) setSwipe(other,false); });
+    swipe={row:row,startX:e.clientX,startY:e.clientY,base:row.classList.contains("swipe-open")?-176:0,dx:0,axis:null,pointer:e.pointerId,moved:false};
+    store.holdRender=true;
   });
   dv.addEventListener("pointermove",function(e){
-    if(!LP.li||LP.dragging) return;
-    if(Math.abs(e.clientX-LP.x)>10||Math.abs(e.clientY-LP.y)>10) lpClear();
-  });
-  dv.addEventListener("pointerup",function(){
-    if(!LP.li) return;
-    var ok=LP.ready, kind=LP.kind, id=LP.li.getAttribute("data-id");
-    lpClear();
-    if(!ok||LP.dragging) return;
-    if(kind==="item"){ var f=findItem(id); if(f) itemDialog(f.d,f.it); }
-    else if(kind==="day"&&state.day>0){ var d=dayByN(state.day); if(d) dayDialog(d); }
-  });
-  dv.addEventListener("pointercancel",function(){ if(!LP.dragging) lpClear(); });
+    if(!swipe.row||e.pointerId!==swipe.pointer||LP.dragging) return;
+    var dx=e.clientX-swipe.startX,dy=e.clientY-swipe.startY;
+    if(!swipe.axis&&Math.max(Math.abs(dx),Math.abs(dy))>10){
+      swipe.axis=Math.abs(dx)>Math.abs(dy)*1.2?"x":"y";
+      if(swipe.axis==="x") swipe.row.setPointerCapture(e.pointerId);
+    }
+    if(swipe.axis!=="x") return;
+    swipe.dx=dx; swipe.moved=true;
+    e.preventDefault();
+    swipe.row.classList.add("swiping");
+    swipe.row.style.setProperty("--swipe-offset",Math.max(-176,Math.min(0,swipe.base+dx))+"px");
+  },{passive:false});
+  function finish(e){
+    if(!swipe.row||e.pointerId!==swipe.pointer) return;
+    var row=swipe.row;
+    row.classList.remove("swiping");
+    if(!LP.dragging) setSwipe(row,e.type!=="pointercancel"&&swipe.axis==="x"?(swipe.base+swipe.dx < -55):row.classList.contains("swipe-open"));
+    swipe.row=null;
+    setTimeout(function(){ swipe.moved=false; },0);
+    if(!LP.dragging){ store.holdRender=false; flushRender(); }
+  }
+  dv.addEventListener("pointerup",finish);
+  dv.addEventListener("pointercancel",finish);
+  dv.addEventListener("click",function(e){ if(swipe.moved){ e.preventDefault(); e.stopPropagation(); swipe.moved=false; } },true);
+  dv.addEventListener("keydown",function(e){ if(e.key==="Escape"){ var row=e.target.closest(".swipe-open"); if(row){ setSwipe(row,false); row.querySelector(".swipe-toggle").focus(); } } });
+  document.addEventListener("pointerdown",function(e){ if(!e.target.closest(".swipe-row")) closeSwipe(); });
   dv.addEventListener("contextmenu",function(e){ if(!edit.on&&e.target.closest(".tl > .it[data-id]")) e.preventDefault(); });
 }
 function orderOps(ul,dayN){
@@ -537,9 +745,12 @@ function initDaySortable(ul,d){
   window.Sortable.create(ul,{
     animation:150,ghostClass:"ghost",delay:HOLD_DRAG,delayOnTouchOnly:false,touchStartThreshold:10,
     scroll:true,scrollSensitivity:90,scrollSpeed:14,
-    onStart:function(){ LP.dragging=true; store.holdRender=true; clearTimeout(LP.t1); clearTimeout(LP.t2); if(LP.li) LP.li.classList.remove("hold"); LP.ready=false; showTip("拖到想要的位置再放開"); },
+    filter:"a,button,input,select,textarea,.swipe-actions,.map-preview",preventOnFilter:false,
+    onChoose:function(){ closeSwipe(); showTip("可以拖曳了，移動手指換位置"); },
+    onUnchoose:hideTip,
+    onStart:function(){ LP.dragging=true; store.holdRender=true; closeSwipe(); showTip("拖到想要的位置再放開"); },
     onEnd:function(){
-      hideTip(); LP.li=null; LP.kind=null;
+      hideTip();
       var ops=orderOps(ul,d.n);
       setTimeout(function(){ LP.dragging=false; store.holdRender=false; if(ops.length) commit(ops); else flushRender(); },0);
     }
@@ -779,6 +990,30 @@ function initSW(){
 /* ---------- 啟動 ---------- */
 function start(){
   initFs(); renderStatus();
+  window.addEventListener("online",refreshMiniMaps);
+  window.addEventListener("offline",refreshMiniMaps);
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){
+      var height=$("date-dock").getBoundingClientRect().height;
+      if(height) document.documentElement.style.setProperty("--date-dock-height",height+"px");
+      revealDate();
+    }).observe($("date-dock"));
+  }
+  window.addEventListener("resize",revealDate);
+  $("go-today").addEventListener("click",function(){ selectDay(dayIndexToday()); });
+  $("chips").addEventListener("keydown",function(e){
+    if(edit.on) return;
+    var buttons=[].slice.call(this.children), idx=buttons.indexOf(document.activeElement);
+    if(idx<0) return;
+    var next=e.key==="ArrowRight"?Math.min(idx+1,buttons.length-1):e.key==="ArrowLeft"?Math.max(idx-1,0):e.key==="Home"?0:e.key==="End"?buttons.length-1:-1;
+    if(next<0) return;
+    e.preventDefault(); buttons[next].click(); $("chips").children[next].focus({preventScroll:true});
+  });
+  $("tabs").addEventListener("keydown",function(e){
+    var idx=TABS.indexOf(state.tab), next=e.key==="ArrowRight"?(idx+1)%TABS.length:e.key==="ArrowLeft"?(idx+TABS.length-1)%TABS.length:-1;
+    if(next<0) return;
+    e.preventDefault(); showTab(TABS[next]); $("tab-"+TABS[next]).focus();
+  });
   $("tabs").addEventListener("click",function(e){ var b=e.target.closest(".tab"); if(b) showTab(b.getAttribute("data-tab")); });
   $("mebtn").addEventListener("click",function(){ whoDialog(false); });
   $("editbtn").addEventListener("click",enterEdit);
