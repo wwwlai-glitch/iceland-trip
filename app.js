@@ -704,7 +704,7 @@ function dayDialog(d){
 
 /* ---------- 左滑操作、長按兩秒拖曳（單日畫面） ---------- */
 var HOLD_DRAG=2000;
-var LP={dragging:false};
+var LP={dragging:false,armed:false};
 var swipe={row:null,startX:0,startY:0,base:0,dx:0,axis:null,pointer:null,moved:false};
 function showTip(t){ var e=$("holdtip"); if(!e){ e=h("div",{id:"holdtip",role:"status"}); document.body.append(e); } e.textContent=t; }
 function hideTip(){ var e=$("holdtip"); if(e) e.remove(); }
@@ -755,6 +755,9 @@ function initHold(){
   dv.addEventListener("keydown",function(e){ if(e.key==="Escape"){ var row=e.target.closest(".swipe-open"); if(row){ setSwipe(row,false); row.querySelector(".swipe-toggle").focus(); } } });
   document.addEventListener("pointerdown",function(e){ if(!e.target.closest(".swipe-row")) closeSwipe(); });
   dv.addEventListener("contextmenu",function(e){ if(!edit.on&&e.target.closest(".tl > .it[data-id]")) e.preventDefault(); });
+  /* 長按滿兩秒、行程已被選起後，擋掉手機原生的捲動。
+     否則 iPhone 等手機會把手指移動當成捲頁面，中斷拖曳（pointercancel）。 */
+  dv.addEventListener("touchmove",function(e){ if((LP.armed||LP.dragging)&&e.cancelable) e.preventDefault(); },{passive:false});
 }
 function orderOps(ul,dayN){
   var ops=[], d=dayByN(dayN);
@@ -771,11 +774,11 @@ function initDaySortable(ul,d){
     animation:150,ghostClass:"ghost",delay:HOLD_DRAG,delayOnTouchOnly:false,touchStartThreshold:10,
     scroll:true,scrollSensitivity:90,scrollSpeed:14,
     filter:"a,button,input,select,textarea,.swipe-actions,.map-preview",preventOnFilter:false,
-    onChoose:function(){ closeSwipe(); showTip("可以拖曳了，移動手指換位置"); },
-    onUnchoose:hideTip,
+    onChoose:function(){ LP.armed=true; closeSwipe(); showTip("可以拖曳了，移動手指換位置"); },
+    onUnchoose:function(){ LP.armed=false; hideTip(); },
     onStart:function(){ LP.dragging=true; store.holdRender=true; closeSwipe(); showTip("拖到想要的位置再放開"); },
     onEnd:function(){
-      hideTip();
+      hideTip(); LP.armed=false;
       var ops=orderOps(ul,d.n);
       setTimeout(function(){ LP.dragging=false; store.holdRender=false; if(ops.length) commit(ops); else flushRender(); },0);
     }
