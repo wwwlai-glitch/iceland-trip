@@ -570,16 +570,20 @@ function renderDay(d){
     h("div",{class:"day-visual mood-"+dayMood(d),"aria-hidden":"true"},
       dailyArtwork(d),
       h("span",{class:"day-visual-stamp"},icon(dayMood(d)),"DAY "+String(d.n).padStart(2,"0"))),copy);
+  /* 「編輯三餐資訊」：有住宿資訊時放在同一行靠右，沒有時放在三餐上方靠右 */
+  var editBtn=h("button",{class:"btn day-edit-btn",type:"button",text:"編輯三餐資訊",onclick:function(){ dayDialog(d); }});
+  var editPlaced=false;
   if(d.ll&&d.ll.length){
     var lodgingMaps=d.ll.filter(mapPreview), lodgingLinks=d.ll.filter(function(l){ return !mapPreview(l); });
-    if(lodgingLinks.length) copy.append(h("div",{class:"btns"},lodgingLinks.map(linkBtn)));
+    if(lodgingLinks.length){ copy.append(h("div",{class:"btns lodging-row"},lodgingLinks.map(linkBtn),editBtn)); editPlaced=true; }
     if(lodgingMaps.length) head.append(h("div",{class:"dayhead-maps"},lodgingMaps.map(linkBtn)));
   }
-  box.append(head);
-  if(d.grp) box.append(h("div",{class:"card"},h("p",{class:"sub",text:d.grp})));
+  /* 三餐與「編輯三餐資訊」放進當天標題卡片裡 */
   var meals=h("div",{class:"meals"});
   d.meals.forEach(function(m,k){ meals.append(h("div",{class:"meal meal-"+k},h("div",{class:"meal-symbol"},icon(["coffee","utensils","moon"][k]||"utensils")),h("div",{class:"k",text:m[0]}),h("div",{class:"v",text:m[1]}),m[2]?h("div",{class:"n",text:m[2]}):null)); });
-  box.append(meals);
+  head.append(h("div",{class:"dayhead-extra"},editPlaced?null:h("div",{class:"dayhead-edit"},editBtn),meals));
+  box.append(head);
+  if(d.grp) box.append(h("div",{class:"card"},h("p",{class:"sub",text:d.grp})));
   var tl=h("ul",{class:"tl","data-day":String(d.n)});
   d.items.forEach(function(i){
     var tm=h("div",{class:"tm"},i.k==="gap"?h("span",{class:"tag gap",text:"待確認"}):i.t);
@@ -614,8 +618,7 @@ function renderDay(d){
   if(idx<DAYS.length-1) nav.append(h("button",{class:"btn solid",type:"button",text:"下一天",onclick:function(){ selectDay(DAYS[idx+1].n); }}));
   box.append(nav);
   box.append(h("div",{class:"btns"},
-    h("button",{class:"btn",type:"button",text:"新增一項行程",onclick:function(){ itemDialog(d,null); }}),
-    h("button",{class:"btn",type:"button",text:"編輯這天的標題與三餐",onclick:function(){ dayDialog(d); }})));
+    h("button",{class:"btn",type:"button",text:"新增一項行程",onclick:function(){ itemDialog(d,null); }})));
   return {box:box,tl:tl};
 }
 

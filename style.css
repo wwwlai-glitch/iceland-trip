@@ -579,3 +579,11 @@ body{margin:0;background-image:radial-gradient(ellipse at 100% 0%,var(--accent-b
   }
   #dayview,.edday{scroll-margin-top:calc(var(--tabbar-height,72px) + var(--date-dock-height,110px) + env(safe-area-inset-top,0px) + 1rem)}
 }
+
+/* 當天標題卡片內的三餐與編輯按鈕 */
+.dayhead-extra{grid-column:1/-1;min-width:0;padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.75rem}
+.dayhead-extra .meal{background:var(--bg)}
+.dayhead-edit{display:flex;justify-content:flex-end}
+.dayhead-edit .btn{min-height:44px}
+.lodging-row .day-edit-btn{margin-left:auto}
+@media(max-width:600px){.lodging-row{gap:.4rem}.lodging-row .btn{padding:.2rem .55rem;font-size:.8rem;white-space:nowrap}}
